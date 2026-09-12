@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cognitive Arena - Cognitive & Typing Benchmark</title>
+  <style>
+    :root {
+      --bg: #0f111a;
+      --card-bg: #1a1d2d;
+      --accent: #7b2cbf;
+      --accent-bright: #8f51c2;
+      --text: #e0e1dd;
+      --subtext: #a0a5b5;
+      --red: #97162d;
+      --green: #318f05d4;
+      --blue: #2191d7;
+      --surface: #24283b;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      user-select: none;
+    }
+
+    h1 {
+      margin-top: 25px;
+      color: #ffffff;
+      font-size: 2.2rem;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: var(--subtext);
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav-btn {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid #3b4261;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .nav-btn:hover {
+      background: #2f354f;
+      border-color: var(--accent-bright);
+    }
+
+    .nav-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent-bright);
+      box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+    }
+
+    #game-container {
+      width: 90%;
+      max-width: 650px;
+      height: 420px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid #2f354f;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: center;
+      padding: 25px;
+      box-sizing: border-box;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      transition: background-color 0.15s ease;
+    }
+
+    .bg-blue { background-color: var(--blue) !important; color: #000; }
+    .bg-red { background-color: var(--red) !important; color: #fff; }
+    .bg-green { background-color: var(--green) !important; color: #fff; }
+
+    .desc-text {
+      max-width: 85%;
+      color: var(--subtext);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin: 10px 0 20px 0;
+    }
+
+    .stat-badge {
+      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin-top: 10px;
+      display: inline-block;
+      color: #ffffff;
+    }
+
+    .target {
+      width: 48px;
+      height: 48px;
+      background: var(--red);
+      border-radius: 50%;
+      position: absolute;
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 20px rgba(151, 31, 53, 0.8);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 65px);
+      gap: 12px;
+    }
+
+    .grid-cell {
+      width: 65px;
+      height: 65px;
+      background: var(--surface);
+      border-radius: 12px;
+      transition: background 0.15s ease;
+    }
+
+    .grid-cell.active { background: var(--accent-bright) !important; box-shadow: 0 0 18px var(--accent-bright); }
+    .grid-cell.correct { background: var(--green) !important; }
+    .grid-cell.wrong { background: var(--red) !important; }
+
+    input[type="text"] {
+      padding: 12px;
+      font-size: 1.3rem;
+      border-radius: 10px;
+      border: 2px solid var(--surface);
+      background: var(--surface);
+      color: #fff;
+      text-align: center;
+      margin: 15px 0;
+      outline: none;
+      width: 85%;
+      max-width: 380px;
+    }
+
+    /* Professional Typing Box */
+    .typing-box {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.35rem;
+      line-height: 1.6;
+      background: var(--surface);
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      height: 130px;
+      overflow: hidden;
+      text-align: left;
+      color: #525870;
+      user-select: none;
+      word-break: break-all;
+    }
+
+    .typing-box .char { position: relative; }
+    .typing-box .char.correct { color: var(--green); }
+    .typing-box .char.wrong { color: var(--red); background: rgba(255, 77, 109, 0.25); border-radius: 2px; }
+    .typing-box .char.current { color: #fff; border-bottom: 2px solid var(--accent-bright); }
+
+    .typing-stats-live {
+      display: flex;
+      gap: 25px;
+      margin-bottom: 12px;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      background: var(--accent-bright);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: transform 0.1s ease, background 0.2s;
+    }
+
+    .btn:hover {
+      background: #b565d8;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cognitive Arena</h1>
+  <div class="subtitle">Cognitive Benchmark & Performance Suite</div>
+  
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchTest('reaction')">Reaction Speed</button>
+    <button class="nav-btn" onclick="switchTest('aim')">Aim Trainer</button>
+    <button class="nav-btn" onclick="switchTest('pattern')">Visual Memory</button>
+    <button class="nav-btn" onclick="switchTest('number')">Number Memory</button>
+    <button class="nav-btn" onclick="switchTest('typing')">Typing Speed</button>
+  </div>
+
+  <div id="game-container" class="bg-blue"></div>
+
+  <script>
+    const container = document.getElementById('game-container');
+    let currentTest = 'reaction';
+
+    let rxTimer = null;
+    let patternInterval = null;
+    let typingTimer = null;
+
+    function clearAllTimers() {
+      if (rxTimer) clearTimeout(rxTimer);
+      if (patternInterval) clearInterval(patternInterval);
+      if (typingTimer) clearInterval(typingTimer);
+      document.removeEventListener('keydown', handleTypingKeydown);
+    }
+
+    function switchTest(test) {
+      clearAllTimers();
+      currentTest = test;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      initTest();
+    }
+
+    function initTest() {
+      container.className = 'bg-blue';
+      container.onclick = null;
+      container.innerHTML = '';
+
+      if (currentTest === 'reaction') setupReaction();
+      else if (currentTest === 'aim') setupAim();
+      else if (currentTest === 'pattern') setupPattern();
+      else if (currentTest === 'number') setupNumber();
+      else if (currentTest === 'typing') setupTyping();
+    }
+
+    /* 1. REACTION SPEED */
+    let rxState = 'idle', rxStart = 0;
+    function setupReaction() {
+      let best = localStorage.getItem('best_rx') ? localStorage.getItem('best_rx') + ' ms' : 'None';
+      rxState = 'idle';
+      container.className = 'bg-blue';
+      container.innerHTML = `
+        <h2 style="color:#000;">Reaction Speed Test</h2>
+        <div class="desc-text" style="color:#222;">Test how fast your brain processes visual cues. Click the box the second it turns green.</div>
+        <div class="stat-badge" style="background:rgba(0,0,0,0.15); color:#000;">⚡ Personal Best: ${best}</div>
+      `;
+      container.onclick = handleReactionClick;
+    }
+
+    function handleReactionClick() {
+      if (rxState === 'idle') {
+        rxState = 'waiting';
+        container.className = 'bg-red';
+        container.innerHTML = '<h2>Wait for green...</h2>';
+        rxTimer = setTimeout(() => {
+          rxState = 'ready';
+          container.className = 'bg-green';
+          container.innerHTML = '<h2>CLICK NOW!</h2>';
+          rxStart = Date.now();
+        }, Math.floor(Math.random() * 3000) + 2000);
+      } else if (rxState === 'waiting') {
+        clearTimeout(rxTimer);
+        rxState = 'idle';
+        container.className = 'bg-blue';
+        container.innerHTML = '<h2 style="color:#000;">Too Early!</h2><p style="color:#222;">Click anywhere to try again.</p>';
+      } else if (rxState === 'ready') {
+        let score = Date.now() - rxStart;
+        rxState = 'idle';
+        let prevBest = localStorage.getItem('best_rx');
+        if (!prevBest || score < parseInt(prevBest)) localStorage.setItem('best_rx', score);
+
+        container.className = 'bg-blue';
+        container.innerHTML = `
+          <h2 style="color:#000; font-size: 2.8rem; margin:0;">${score} ms</h2>
+          <p style="color:#111; font-weight:600; margin-top:5px;">Global Average: 273 ms</p>
+          <div class="stat-badge" style="background:rgba(0,0,0,0.15); color:#000;">⚡ Personal Best: ${localStorage.getItem('best_rx')} ms</div>
+          <p style="margin-top:20px; font-size:0.9rem; color:#222;">Click anywhere to try again.</p>
+        `;
+      }
+    }
+
+    /* 2. AIM TRAINER */
+    let aimHits = 0, aimStart = 0;
+    const TOTAL_TARGETS = 15;
+    function setupAim() {
+      let best = localStorage.getItem('best_aim') ? localStorage.getItem('best_aim') + ' ms/target' : 'None';
+      container.className = '';
+      container.onclick = null;
+      container.innerHTML = `
+        <h2>Aim Trainer</h2>
+        <div class="desc-text">Measure your mouse control and target flicking speed. Click 15 targets as fast as possible.</div>
+        <div class="stat-badge">🎯 Personal Best: ${best}</div><br><br>
+        <button class="btn" onclick="startAimGame(event)">Start Game</button>
+      `;
+    }
+
+    function startAimGame(e) {
+      e.stopPropagation();
+      aimHits = 0;
+      container.innerHTML = '';
+      aimStart = Date.now();
+      spawnTarget();
+    }
+
+    function spawnTarget() {
+      container.innerHTML = '';
+      if (aimHits >= TOTAL_TARGETS) {
+        let avgPerTarget = Math.round((Date.now() - aimStart) / TOTAL_TARGETS);
+        let prevBest = localStorage.getItem('best_aim');
+        if (!prevBest || avgPerTarget < parseInt(prevBest)) localStorage.setItem('best_aim', avgPerTarget);
+
+        container.innerHTML = `
+          <h2 style="font-size: 2.5rem; margin:0;">${avgPerTarget} ms / target</h2>
+          <p style="color:var(--subtext); font-weight:600; margin-top:5px;">Global Average: 420 ms / target</p>
+          <div class="stat-badge">🎯 Personal Best: ${localStorage.getItem('best_aim')} ms</div><br>
+          <button class="btn" onclick="setupAim()" style="margin-top:20px;">Try Again</button>
+        `;
+        return;
+      }
+      let target = document.createElement('div');
+      target.className = 'target';
+      target.style.top = Math.floor(Math.random() * 310 + 20) + 'px';
+      target.style.left = Math.floor(Math.random() * 540 + 20) + 'px';
+      target.onclick = (e) => { e.stopPropagation(); aimHits++; spawnTarget(); };
+      container.appendChild(target);
+    }
+
+    /* 3. VISUAL MEMORY PATTERN */
+    let patternLevel = 1, patternSequence = [], userSequence = [];
+    function setupPattern() {
+      let best = localStorage.getItem('best_pattern') ? 'Level ' + localStorage.getItem('best_pattern') : 'None';
+      container.className = '';
+      container.onclick = null;
+      container.innerHTML = `
+        <h2>Visual Memory</h2>
+        <div class="desc-text">Train your short-term spatial awareness. Remember the highlighted tile sequence on a 4x4 grid.</div>
+        <div class="stat-badge">🧠 Personal Best: ${best}</div><br><br>
+        <button class="btn" onclick="startPatternGame()">Start Level 1</button>
+      `;
+      patternLevel = 1;
+    }
+
+    function startPatternGame() {
+      userSequence = [];
+      patternSequence = [];
+      let tileCount = patternLevel + 2; 
+
+      container.innerHTML = `
+        <h3 style="margin-bottom:15px; color:var(--accent-bright);">Level ${patternLevel} (${tileCount} Tiles)</h3>
+        <div class="grid">${'<div class="grid-cell"></div>'.repeat(16)}</div>
+      `;
+
+      let cells = container.querySelectorAll('.grid-cell');
+      while(patternSequence.length < tileCount) {
+        let rand = Math.floor(Math.random() * 16);
+        if(!patternSequence.includes(rand)) patternSequence.push(rand);
+      }
+
+      let i = 0;
+      patternInterval = setInterval(() => {
+        cells.forEach(c => c.classList.remove('active'));
+        if (i < patternSequence.length) {
+          cells[patternSequence[i]].classList.add('active');
+          i++;
+        } else {
+          clearInterval(patternInterval);
+          enableGridInteraction(cells);
+        }
+      }, 500);
+    }
+
+    function enableGridInteraction(cells) {
+      cells.forEach((cell, idx) => {
+        cell.onclick = () => {
+          if (userSequence.includes(idx)) return;
+          if (patternSequence.includes(idx)) {
+            cell.classList.add('correct');
+            userSequence.push(idx);
+            if (userSequence.length === patternSequence.length) {
+              patternLevel++;
+              setTimeout(startPatternGame, 600);
+            }
+          } else {
+            cell.classList.add('wrong');
+            let finalLevel = patternLevel;
+            let prevBest = localStorage.getItem('best_pattern');
+            if (!prevBest || finalLevel > parseInt(prevBest)) localStorage.setItem('best_pattern', finalLevel);
+
+            setTimeout(() => {
+              container.innerHTML = `
+                <h2>Reached Level ${finalLevel}</h2>
+                <p style="color:var(--subtext); font-weight:600;">Global Average: Level 7</p>
+                <div class="stat-badge">🧠 Personal Best: Level ${localStorage.getItem('best_pattern')}</div><br>
+                <button class="btn" onclick="setupPattern()" style="margin-top:20px;">Try Again</button>
+              `;
+            }, 600);
+          }
+        };
+      });
+    }
+
+    /* 4. NUMBER MEMORY */
+    let numDigits = 3, targetNumStr = '';
+    function setupNumber() {
+      let best = localStorage.getItem('best_num') ? localStorage.getItem('best_num') + ' Digits' : 'None';
+      container.className = '';
+      container.onclick = null;
+      container.innerHTML = `
+        <h2>Number Memory</h2>
+        <div class="desc-text">Test your memory capacity with longer digit sequences. Memorize the number before time runs out.</div>
+        <div class="stat-badge">🔢 Personal Best: ${best}</div><br><br>
+        <button class="btn" onclick="startNumberGame()">Start Game</button>
+      `;
+      numDigits = 3;
+    }
+
+    function startNumberGame() {
+      targetNumStr = '';
+      for(let i = 0; i < numDigits; i++) targetNumStr += Math.floor(Math.random() * 10);
+
+      container.innerHTML = `
+        <p style="color:var(--subtext);">Remember this number (${numDigits} Digits):</p>
+        <h1 style="font-size: 3.2rem; letter-spacing: 6px; color: var(--accent-bright); margin:10px 0;">${targetNumStr}</h1>
+      `;
+
+      setTimeout(() => {
+        container.innerHTML = `
+          <h2>What was the number?</h2>
+          <input type="text" id="numInput" autocomplete="off" autofocus />
+          <br>
+          <button class="btn" onclick="checkNumberGuess()">Submit</button>
+        `;
+        document.getElementById('numInput').focus();
+      }, 1500 + (numDigits * 400));
+    }
+
+    function checkNumberGuess() {
+      let guess = document.getElementById('numInput').value.trim();
+      if (guess === targetNumStr) {
+        numDigits++;
+        startNumberGame();
+      } else {
+        let achievedDigits = numDigits - 1;
+        let prevBest = localStorage.getItem('best_num');
+        if (!prevBest || achievedDigits > parseInt(prevBest)) localStorage.setItem('best_num', achievedDigits);
+
+        container.innerHTML = `
+          <h2>Reached ${achievedDigits} Digits</h2>
+          <p style="color:var(--subtext);">Correct number was: <strong style="color:#fff;">${targetNumStr}</strong></p>
+          <p style="color:var(--subtext); font-weight:600;">Global Average: 7 Digits</p>
+          <div class="stat-badge">🔢 Personal Best: ${localStorage.getItem('best_num')} Digits</div><br>
+          <button class="btn" onclick="setupNumber()" style="margin-top:20px;">Try Again</button>
+        `;
+      }
+    }
+
+    /* 5. TIMED TYPING ENGINE */
+    const wordBankExpanded = [
+      "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+      "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
+      "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time",
+      "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than",
+      "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work",
+      "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "system", "program",
+      "run", "state", "point", "form", "great", "change", "hand", "off", "play", "spell", "air", "away", "line", "end", "turn", "home"
+    ];
+
+    let typingText = "";
+    let typedChars = [];
+    let isTestActive = false;
+    let timeLeft = 30;
+    let totalTypedCount = 0;
+    let correctCharsCount = 0;
+
+    function setupTyping() {
+      let best = localStorage.getItem('best_wpm') ? localStorage.getItem('best_wpm') + ' WPM' : 'None';
+      container.className = '';
+      container.onclick = null;
+      container.innerHTML = `
+        <h2>Standard 30-Second Typing Test</h2>
+        <div class="desc-text">30-second continuous test. Type dynamically across an infinite word stream.</div>
+        <div class="stat-badge">⌨️ Personal Best: ${best}</div><br><br>
+        <button class="btn" onclick="startTypingGame()">Start Test</button>
+      `;
+    }
+
+    function generateWordStream(count) {
+      let words = [];
+      for(let i = 0; i < count; i++) {
+        words.push(wordBankExpanded[Math.floor(Math.random() * wordBankExpanded.length)]);
+      }
+      return words.join(" ") + " ";
+    }
+
+    function startTypingGame() {
+      document.removeEventListener('keydown', handleTypingKeydown);
+      if (typingTimer) clearInterval(typingTimer);
+
+      typingText = generateWordStream(80);
+      typedChars = [];
+      isTestActive = false;
+      timeLeft = 30;
+      totalTypedCount = 0;
+      correctCharsCount = 0;
+
+      container.innerHTML = `
+        <div class="typing-stats-live">
+          <span style="color:var(--accent-bright);" id="liveTimer">30s</span>
+          <span style="color:var(--subtext);" id="liveWPM">0 WPM</span>
+        </div>
+        <div id="typingBox" class="typing-box"></div>
+        <p style="color: var(--subtext); margin-top: 15px; font-size:0.85rem;">Type the first letter to begin the 30-second timer...</p>
+      `;
+
+      renderTypingBox();
+      document.addEventListener('keydown', handleTypingKeydown);
+    }
+
+    function startCountdown() {
+      isTestActive = true;
+      typingTimer = setInterval(() => {
+        timeLeft--;
+        let timerEl = document.getElementById('liveTimer');
+        if (timerEl) timerEl.textContent = timeLeft + 's';
+
+        updateLiveStats();
+
+        if (timeLeft <= 0) {
+          clearInterval(typingTimer);
+          finishProTyping();
+        }
+      }, 1000);
+    }
+
+    function updateLiveStats() {
+      let elapsedMinutes = (30 - timeLeft) / 60;
+      if (elapsedMinutes > 0) {
+        let currentWPM = Math.round((correctCharsCount / 5) / elapsedMinutes);
+        let wpmEl = document.getElementById('liveWPM');
+        if (wpmEl) wpmEl.textContent = currentWPM + ' WPM';
+      }
+    }
+
+    function renderTypingBox() {
+      let box = document.getElementById('typingBox');
+      if (!box) return;
+
+      if (typingText.length - typedChars.length < 50) {
+        typingText += generateWordStream(40);
+      }
+
+      let html = "";
+      for (let i = 0; i < typingText.length; i++) {
+        let char = typingText[i];
+        let status = "";
+        
+        if (i < typedChars.length) {
+          status = typedChars[i] === char ? "correct" : "wrong";
+        } else if (i === typedChars.length) {
+          status = "current";
+        }
+
+        html += `<span class="char ${status}">${char === " " ? "&nbsp;" : char}</span>`;
+      }
+      box.innerHTML = html;
+
+      let currentCharSpan = box.querySelector('.char.current');
+      if (currentCharSpan) {
+        box.scrollTop = currentCharSpan.offsetTop - box.offsetTop - 30;
+      }
+    }
+
+    function handleTypingKeydown(e) {
+      if (currentTest !== 'typing') return;
+      
+      if (e.key === 'Tab' || e.key === 'Alt' || e.key === 'Control' || e.key === 'Shift' || e.key === 'CapsLock') {
+        return;
+      }
+
+      if (e.key === ' ') e.preventDefault();
+
+      if (!isTestActive && e.key.length === 1) {
+        startCountdown();
+      }
+
+      if (e.key === 'Backspace') {
+        if (typedChars.length > 0) {
+          let removedCharIndex = typedChars.length - 1;
+          if (typedChars[removedCharIndex] === typingText[removedCharIndex]) {
+            correctCharsCount--;
+          }
+          typedChars.pop();
+        }
+      } else if (e.key.length === 1) {
+        let currentIndex = typedChars.length;
+        typedChars.push(e.key);
+        totalTypedCount++;
+        
+        if (e.key === typingText[currentIndex]) {
+          correctCharsCount++;
+        }
+      }
+
+      renderTypingBox();
+    }
+
+    function finishProTyping() {
+      document.removeEventListener('keydown', handleTypingKeydown);
+
+      let finalWPM = Math.round((correctCharsCount / 5) / 0.5);
+      let accuracy = totalTypedCount > 0 ? Math.round((correctCharsCount / totalTypedCount) * 100) : 0;
+
+      let prevBest = localStorage.getItem('best_wpm');
+      if (!prevBest || finalWPM > parseInt(prevBest)) {
+        localStorage.setItem('best_wpm', finalWPM);
+      }
+
+      container.innerHTML = `
+        <h2 style="font-size: 2.8rem; margin:0;">${finalWPM} WPM</h2>
+        <p style="color:var(--subtext); font-weight:600; margin-top:5px;">Accuracy: ${accuracy}% | Global Average: 40 WPM</p>
+        <div class="stat-badge">⌨️ Personal Best: ${localStorage.getItem('best_wpm')} WPM</div><br>
+        <button class="btn" onclick="setupTyping()" style="margin-top:20px;">Try Again</button>
+      `;
+    }
+
+    initTest();
+  </script>
+</body>
+</html>
