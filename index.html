@@ -108,18 +108,7 @@ button {
     font-size: 17px;
     line-height: 1.7;
 
-    margin-bottom: 20px;
-}
-
-.landing-note {
-    max-width: 590px;
-
-    color: #686e7b;
-
-    font-size: 12px;
-    line-height: 1.6;
-
-    margin-bottom: 27px;
+    margin-bottom: 31px;
 }
 
 .start-btn,
@@ -369,8 +358,6 @@ button {
 }
 
 .test-container {
-    position: relative;
-
     min-height: 530px;
 
     display: flex;
@@ -388,7 +375,7 @@ button {
 
     text-align: center;
 
-    overflow: hidden;
+    position: relative;
 }
 
 .instruction {
@@ -411,39 +398,38 @@ button {
 
     inset: 0;
 
-    z-index: 100;
-
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    background: rgba(16,18,25,.38);
+    z-index: 20;
 
     pointer-events: none;
 }
 
 .test-countdown-number {
-    font-size: clamp(70px, 12vw, 110px);
+    font-size: clamp(58px, 10vw, 92px);
 
-    font-weight: 900;
+    font-weight: 850;
 
-    letter-spacing: -6px;
+    color: white;
 
-    color: var(--text);
+    letter-spacing: -4px;
 
     text-shadow:
-        0 0 25px rgba(141,124,255,.35);
+        0 0 18px rgba(255,255,255,.15);
 
-    animation: countdownPulse .8s ease;
+    animation: countdownPulse .75s ease;
 }
 
 @keyframes countdownPulse {
     0% {
         opacity: 0;
-        transform: scale(.72);
+        transform: scale(.75);
     }
 
-    30% {
+    35% {
         opacity: 1;
         transform: scale(1);
     }
@@ -521,6 +507,8 @@ button {
     transition:
         background .08s linear,
         transform .08s linear;
+
+    position: relative;
 }
 
 .reaction-box.waiting {
@@ -566,10 +554,7 @@ button {
     position: relative;
 
     width: min(780px, 100%);
-
-    aspect-ratio: 4 / 3;
-
-    max-height: 395px;
+    height: 395px;
 
     overflow: hidden;
 
@@ -587,7 +572,13 @@ button {
     cursor: none;
 }
 
-.grid-virtual-layer {
+/*
+   Fixed virtual Gridshot space.
+   All targets are positioned in an 800x600 coordinate system,
+   then scaled uniformly to fit the visible area.
+*/
+
+.grid-virtual {
     position: absolute;
 
     width: 800px;
@@ -597,6 +588,8 @@ button {
     top: 50%;
 
     transform-origin: center center;
+
+    pointer-events: auto;
 }
 
 .grid-crosshair {
@@ -915,8 +908,7 @@ button {
     }
 
     .gridshot-area {
-        width: min(100%, 780px);
-        max-height: none;
+        height: 330px;
     }
 
     .grid-target {
@@ -953,13 +945,8 @@ button {
     <p class="landing-description">
         Five focused tests for reaction speed, visual memory,
         number memory, flick accuracy and typing performance.
-    </p>
-
-    <p class="landing-note">
-        These are approximate browser-based performance tests.
-        Results can vary with hardware, display refresh rate,
-        input device, browser timing and other conditions.
-        They are intended for self-comparison, not clinical assessment.
+        Results are approximate because browser performance,
+        hardware and input devices can affect measurements.
     </p>
 
     <button class="start-btn" id="startBtn">
@@ -1102,9 +1089,8 @@ button {
 
             <div class="hover-description">
                 Memorize a group of highlighted locations and
-                reproduce the same pattern after the highlights
-                disappear. Each successful round increases
-                the number of locations.
+                reproduce them after they disappear. Each successful
+                round increases the number of locations.
             </div>
 
         </article>
@@ -1168,10 +1154,9 @@ button {
             </div>
 
             <div class="hover-description">
-                A fresh paragraph is shown for you to type
-                during a fixed 30-second test. The paragraph
-                changes between runs so previous memorization
-                does not provide an advantage.
+                Type the displayed paragraph during the fixed test.
+                The passage continues automatically so fast typists
+                cannot run out of text.
             </div>
 
         </article>
@@ -1391,6 +1376,7 @@ resetBtn.addEventListener(
         results = { ...DEFAULT_RESULTS };
 
         saveResults();
+
         updateBestLabels();
 
     }
@@ -1442,6 +1428,7 @@ function openTest(type) {
         case "typing":
             cleanupCurrentTest = typingTest();
             break;
+
     }
 }
 
@@ -1482,7 +1469,6 @@ function performanceScore(
         )
     );
 }
-
 
 function resultHTML({
     value,
@@ -1531,74 +1517,50 @@ function resultHTML({
    COUNTDOWN HELPER
 ========================================================= */
 
-function runCountdown(onComplete) {
+function createCountdown(container, callback) {
 
-    const overlay =
-        document.createElement("div");
+    const countdown = document.createElement("div");
 
-    overlay.className =
-        "test-countdown";
+    countdown.className = "test-countdown";
 
-    const number =
-        document.createElement("div");
+    container.appendChild(countdown);
 
-    number.className =
-        "test-countdown-number";
+    let number = 3;
 
-    overlay.appendChild(number);
+    countdown.innerHTML = `
+        <div class="test-countdown-number">
+            ${number}
+        </div>
+    `;
 
-    testContainer.appendChild(overlay);
+    const interval = setInterval(() => {
 
-    let count = 3;
-    let cancelled = false;
-    let timer = null;
+        number--;
 
-    function showNumber() {
+        if (number <= 0) {
 
-        if (cancelled) return;
+            clearInterval(interval);
 
-        number.textContent = count;
+            countdown.remove();
 
-        number.style.animation = "none";
+            callback();
 
-        void number.offsetWidth;
-
-        number.style.animation =
-            "countdownPulse .8s ease";
-
-        if (count === 0) {
             return;
         }
 
-        timer = setTimeout(() => {
+        countdown.innerHTML = `
+            <div class="test-countdown-number">
+                ${number}
+            </div>
+        `;
 
-            count--;
-
-            if (count > 0) {
-                showNumber();
-            } else {
-
-                overlay.remove();
-
-                if (!cancelled) {
-                    onComplete();
-                }
-
-            }
-
-        }, 800);
-    }
-
-    showNumber();
+    }, 700);
 
     return () => {
+        clearInterval(interval);
 
-        cancelled = true;
-
-        clearTimeout(timer);
-
-        if (overlay.isConnected) {
-            overlay.remove();
+        if (countdown.parentNode) {
+            countdown.remove();
         }
     };
 }
@@ -1611,12 +1573,44 @@ function runCountdown(onComplete) {
 function reactionTest() {
 
     testContainer.innerHTML = `
-
         <p class="instruction">
             Press Begin and wait.
             The panel will change at an unpredictable time.
             Click only after it turns green.
         </p>
+
+        <div style="margin-bottom:18px;">
+
+            <label
+                for="refreshRate"
+                style="
+                    color:#707684;
+                    font-size:12px;
+                    margin-right:7px;
+                "
+            >
+                Display refresh rate
+            </label>
+
+            <select
+                id="refreshRate"
+                style="
+                    background:#151821;
+                    color:#f4f5f7;
+                    border:1px solid #272b35;
+                    border-radius:7px;
+                    padding:6px 9px;
+                    outline:none;
+                "
+            >
+                <option value="60">60 Hz</option>
+                <option value="120">120 Hz</option>
+                <option value="144">144 Hz</option>
+                <option value="165">165 Hz</option>
+                <option value="240">240 Hz</option>
+            </select>
+
+        </div>
 
         <div
             class="reaction-box waiting"
@@ -1643,8 +1637,6 @@ function reactionTest() {
 
         </div>
 
-        <div id="reactionCalibration"></div>
-
         <div id="reactionResult"></div>
     `;
 
@@ -1660,132 +1652,88 @@ function reactionTest() {
     const result =
         document.getElementById("reactionResult");
 
-    const calibration =
-        document.getElementById("reactionCalibration");
+    const refreshRate =
+        document.getElementById("refreshRate");
 
     let state = "idle";
 
     let timer = null;
-    let countdownCleanup = null;
 
     let signalTime = 0;
 
-    let refreshRate = 60;
-    let calibrated = false;
+    let removeCountdown = null;
 
-    calibration.innerHTML = `
-        <div style="
-            margin-top:14px;
-            color:#707684;
-            font-size:12px;
-        ">
-            Optional hardware calibration:
-            <select
-                id="refreshRate"
-                style="
-                    margin-left:6px;
-                    background:#151821;
-                    color:#f4f5f7;
-                    border:1px solid #272b35;
-                    border-radius:6px;
-                    padding:4px 7px;
-                    outline:none;
-                "
-            >
-                <option value="60">60 Hz</option>
-                <option value="75">75 Hz</option>
-                <option value="120">120 Hz</option>
-                <option value="144">144 Hz</option>
-                <option value="165">165 Hz</option>
-                <option value="240">240 Hz</option>
-                <option value="360">360 Hz</option>
-            </select>
-        </div>
-    `;
+    function beginAfterCountdown() {
 
-    const refreshSelect =
-        document.getElementById("refreshRate");
+        state = "waiting";
 
-    refreshSelect.addEventListener(
-        "change",
-        () => {
+        box.className =
+            "reaction-box waiting";
 
-            refreshRate =
-                Number(refreshSelect.value);
+        text.textContent =
+            "Wait...";
 
-            calibrated = true;
-        }
-    );
+        start.style.display =
+            "none";
 
+        const delay =
+            1500 +
+            Math.random() * 3500;
 
-    function begin() {
+        timer = setTimeout(() => {
 
-        if (
-            state === "waiting" ||
-            state === "countdown"
-        ) {
-            return;
-        }
+            /*
+             * The signal timestamp is captured inside the
+             * animation frame in which the green state is
+             * actually presented to the browser.
+             */
 
-        state = "countdown";
+            requestAnimationFrame(() => {
 
-        start.style.display = "none";
-
-        countdownCleanup =
-            runCountdown(() => {
-
-                if (state !== "countdown") {
+                if (state !== "waiting") {
                     return;
                 }
 
-                state = "waiting";
+                state = "ready";
 
                 box.className =
-                    "reaction-box waiting";
+                    "reaction-box ready";
 
                 text.textContent =
-                    "Wait...";
+                    "CLICK";
 
-                const delay =
-                    1500 +
-                    Math.random() * 3500;
-
-                timer = setTimeout(() => {
-
-                    if (state !== "waiting") {
-                        return;
-                    }
-
-                    box.className =
-                        "reaction-box ready";
-
-                    text.textContent =
-                        "CLICK";
-
-                    /*
-                       The timestamp is captured on the animation
-                       frame where the green state is actually
-                       painted by the browser.
-                    */
-
-                    requestAnimationFrame(() => {
-
-                        if (state !== "waiting") {
-                            return;
-                        }
-
-                        state = "ready";
-
-                        signalTime =
-                            performance.now();
-
-                    });
-
-                }, delay);
+                signalTime =
+                    performance.now();
 
             });
+
+        }, delay);
     }
 
+    function begin() {
+
+        if (state !== "idle" &&
+            state !== "early" &&
+            state !== "finished") {
+            return;
+        }
+
+        clearTimeout(timer);
+
+        if (removeCountdown) {
+            removeCountdown();
+        }
+
+        start.style.display =
+            "none";
+
+        removeCountdown =
+            createCountdown(
+                testContainer,
+                beginAfterCountdown
+            );
+
+    }
 
     function clickBox() {
 
@@ -1814,22 +1762,21 @@ function reactionTest() {
             return;
         }
 
-        /*
-           Raw reaction time is measured with performance.now().
-        */
-
         const rawReaction =
             performance.now() -
             signalTime;
 
+        const rate =
+            Number(refreshRate.value);
+
         /*
-           Optional one-frame hardware/display compensation.
-           This is an approximation, not a measurement of true
-           physiological reaction time.
-        */
+         * Approximate frame-budget compensation.
+         * This is only a rough correction, not a measurement
+         * of the user's true physiological reaction time.
+         */
 
         const frameBudget =
-            1000 / refreshRate;
+            1000 / rate;
 
         const reaction =
             Math.max(
@@ -1871,6 +1818,7 @@ function reactionTest() {
                 reaction;
 
             saveResults();
+
         }
 
         result.innerHTML =
@@ -1886,9 +1834,10 @@ function reactionTest() {
                     "Recorded Human Benchmark average: about 284 ms. Hardware and display latency can affect browser reaction tests.",
 
                 score
-            });
-    }
 
+            });
+
+    }
 
     start.addEventListener(
         "click",
@@ -1900,13 +1849,13 @@ function reactionTest() {
         clickBox
     );
 
-
     return () => {
 
         clearTimeout(timer);
 
-        if (countdownCleanup) {
-            countdownCleanup();
+        if (removeCountdown) {
+            removeCountdown();
+            removeCountdown = null;
         }
 
     };
@@ -1920,7 +1869,6 @@ function reactionTest() {
 function gridshotTest() {
 
     testContainer.innerHTML = `
-
         <p class="instruction">
             Hit each target as quickly as possible.
             Accuracy matters too: every click is checked
@@ -1949,8 +1897,8 @@ function gridshotTest() {
         >
 
             <div
-                class="grid-virtual-layer"
-                id="gridVirtualLayer"
+                class="grid-virtual"
+                id="gridVirtual"
             ></div>
 
         </div>
@@ -1977,10 +1925,8 @@ function gridshotTest() {
     const area =
         document.getElementById("gridArea");
 
-    const virtualLayer =
-        document.getElementById(
-            "gridVirtualLayer"
-        );
+    const virtual =
+        document.getElementById("gridVirtual");
 
     const start =
         document.getElementById("gridStart");
@@ -1998,13 +1944,12 @@ function gridshotTest() {
         document.getElementById("gridResult");
 
     const crosshair =
-        document.getElementById(
-            "gridCrosshair"
-        );
+        document.getElementById("gridCrosshair");
 
     let running = false;
 
     let hits = 0;
+
     let misses = 0;
 
     let target = null;
@@ -2013,7 +1958,7 @@ function gridshotTest() {
 
     let endTime = 0;
 
-    let countdownCleanup = null;
+    let removeCountdown = null;
 
 
     function updateVirtualScale() {
@@ -2027,10 +1972,12 @@ function gridshotTest() {
                 rect.height / 600
             );
 
-        virtualLayer.style.transform =
+        virtual.style.transform =
             `translate(-50%, -50%) scale(${scale})`;
+
     }
 
+    updateVirtualScale();
 
     function moveCrosshair(event) {
 
@@ -2046,15 +1993,15 @@ function gridshotTest() {
 
         crosshair.style.top =
             `${event.clientY - 7}px`;
-    }
 
+    }
 
     function hideCrosshair() {
 
         crosshair.style.display =
             "none";
-    }
 
+    }
 
     function createTarget() {
 
@@ -2068,12 +2015,8 @@ function gridshotTest() {
         target.className =
             "grid-target";
 
-        /*
-           Target coordinates always exist inside the same
-           800 × 600 virtual playfield.
-        */
-
-        const radius = 21;
+        const radius =
+            21;
 
         const x =
             radius +
@@ -2091,16 +2034,14 @@ function gridshotTest() {
         target.style.top =
             `${y}px`;
 
-        virtualLayer.appendChild(
-            target
-        );
+        virtual.appendChild(target);
 
         target.addEventListener(
             "click",
             hitTarget
         );
-    }
 
+    }
 
     function hitTarget(event) {
 
@@ -2115,23 +2056,27 @@ function gridshotTest() {
         updateCounters();
 
         createTarget();
-    }
 
+    }
 
     function areaMiss(event) {
 
-        if (
-            !running ||
-            event.target !== area
-        ) {
+        if (!running) {
             return;
         }
 
-        misses++;
+        if (
+            event.target === area ||
+            event.target === virtual
+        ) {
 
-        updateCounters();
+            misses++;
+
+            updateCounters();
+
+        }
+
     }
-
 
     function updateCounters() {
 
@@ -2142,8 +2087,7 @@ function gridshotTest() {
             attempts === 0
                 ? 100
                 : Math.round(
-                    (hits / attempts) *
-                    100
+                    (hits / attempts) * 100
                 );
 
         hitsText.textContent =
@@ -2151,8 +2095,8 @@ function gridshotTest() {
 
         accuracyText.textContent =
             `Accuracy: ${accuracy}%`;
-    }
 
+    }
 
     function updateTimer() {
 
@@ -2177,53 +2121,61 @@ function gridshotTest() {
             finish();
 
             return;
+
         }
 
         animationFrame =
             requestAnimationFrame(
                 updateTimer
             );
+
     }
 
+    function beginAfterCountdown() {
 
-    function begin() {
-
-        if (
-            running ||
-            countdownCleanup
-        ) {
-            return;
-        }
+        running = true;
 
         hits = 0;
-        misses = 0;
 
-        updateCounters();
+        misses = 0;
 
         start.style.display =
             "none";
 
+        endTime =
+            performance.now() +
+            20000;
+
         updateVirtualScale();
 
-        countdownCleanup =
-            runCountdown(() => {
+        updateCounters();
 
-                countdownCleanup =
-                    null;
+        createTarget();
 
-                running = true;
+        updateTimer();
 
-                endTime =
-                    performance.now() +
-                    20000;
-
-                createTarget();
-
-                updateTimer();
-
-            });
     }
 
+    function begin() {
+
+        if (running) {
+            return;
+        }
+
+        if (removeCountdown) {
+            removeCountdown();
+        }
+
+        start.style.display =
+            "none";
+
+        removeCountdown =
+            createCountdown(
+                testContainer,
+                beginAfterCountdown
+            );
+
+    }
 
     function finish() {
 
@@ -2244,6 +2196,7 @@ function gridshotTest() {
             target.remove();
 
             target = null;
+
         }
 
         const attempts =
@@ -2253,8 +2206,7 @@ function gridshotTest() {
             attempts === 0
                 ? 0
                 : Math.round(
-                    (hits / attempts) *
-                    100
+                    (hits / attempts) * 100
                 );
 
         start.style.display =
@@ -2275,6 +2227,7 @@ function gridshotTest() {
                 accuracy;
 
             saveResults();
+
         }
 
         result.innerHTML =
@@ -2296,9 +2249,10 @@ function gridshotTest() {
                         60,
                         false
                     )
-            });
-    }
 
+            });
+
+    }
 
     area.addEventListener(
         "click",
@@ -2325,10 +2279,6 @@ function gridshotTest() {
         begin
     );
 
-
-    updateVirtualScale();
-
-
     return () => {
 
         running = false;
@@ -2339,8 +2289,9 @@ function gridshotTest() {
 
         hideCrosshair();
 
-        if (countdownCleanup) {
-            countdownCleanup();
+        if (removeCountdown) {
+            removeCountdown();
+            removeCountdown = null;
         }
 
         if (target) {
@@ -2351,6 +2302,7 @@ function gridshotTest() {
             "resize",
             updateVirtualScale
         );
+
     };
 }
 
@@ -2362,7 +2314,6 @@ function gridshotTest() {
 function visualMemoryTest() {
 
     testContainer.innerHTML = `
-
         <p
             class="instruction"
             id="visualInstruction"
@@ -2417,10 +2368,9 @@ function visualMemoryTest() {
 
     let timer = null;
 
-    let selectedSet =
-        new Set();
+    let selectedSet = new Set();
 
-    let countdownCleanup = null;
+    let removeCountdown = null;
 
 
     for (
@@ -2461,9 +2411,7 @@ function visualMemoryTest() {
                     pattern.includes(index)
                 ) {
 
-                    selectedSet.add(
-                        index
-                    );
+                    selectedSet.add(index);
 
                     cell.classList.add(
                         "correct"
@@ -2475,6 +2423,7 @@ function visualMemoryTest() {
                     ) {
 
                         evaluate();
+
                     }
 
                 } else {
@@ -2484,13 +2433,16 @@ function visualMemoryTest() {
                     );
 
                     finish();
+
                 }
+
             }
         );
 
         cells.push(cell);
 
         grid.appendChild(cell);
+
     }
 
 
@@ -2505,8 +2457,7 @@ function visualMemoryTest() {
             );
 
         while (
-            pattern.length <
-            count
+            pattern.length < count
         ) {
 
             const index =
@@ -2516,16 +2467,15 @@ function visualMemoryTest() {
                 );
 
             if (
-                !pattern.includes(
-                    index
-                )
+                !pattern.includes(index)
             ) {
 
-                pattern.push(
-                    index
-                );
+                pattern.push(index);
+
             }
+
         }
+
     }
 
 
@@ -2535,12 +2485,12 @@ function visualMemoryTest() {
 
         selectedSet.clear();
 
-        cells.forEach(cell => {
-
-            cell.className =
-                "memory-cell";
-
-        });
+        cells.forEach(
+            cell => {
+                cell.className =
+                    "memory-cell";
+            }
+        );
 
         generatePattern();
 
@@ -2565,23 +2515,25 @@ function visualMemoryTest() {
             );
 
         timer =
-            setTimeout(() => {
+            setTimeout(
+                () => {
 
-                cells.forEach(
-                    cell => {
+                    cells.forEach(
+                        cell => {
+                            cell.className =
+                                "memory-cell";
+                        }
+                    );
 
-                        cell.className =
-                            "memory-cell";
+                    selecting = true;
 
-                    }
-                );
+                    instruction.textContent =
+                        "Click the squares that were highlighted.";
 
-                selecting = true;
+                },
+                displayTime
+            );
 
-                instruction.textContent =
-                    "Select the same squares you memorized.";
-
-            }, displayTime);
     }
 
 
@@ -2595,6 +2547,7 @@ function visualMemoryTest() {
             showRound,
             500
         );
+
     }
 
 
@@ -2616,6 +2569,7 @@ function visualMemoryTest() {
                 finalLevel;
 
             saveResults();
+
         }
 
         start.style.display =
@@ -2635,7 +2589,23 @@ function visualMemoryTest() {
 
                 benchmark:
                     "The result is the highest pattern level completed without an error."
+
             });
+
+    }
+
+
+    function beginAfterCountdown() {
+
+        level = 1;
+
+        result.innerHTML = "";
+
+        start.style.display =
+            "none";
+
+        showRound();
+
     }
 
 
@@ -2643,26 +2613,19 @@ function visualMemoryTest() {
         "click",
         () => {
 
-            if (countdownCleanup) {
-                return;
+            if (removeCountdown) {
+                removeCountdown();
             }
-
-            level = 1;
-
-            result.innerHTML = "";
 
             start.style.display =
                 "none";
 
-            countdownCleanup =
-                runCountdown(() => {
+            removeCountdown =
+                createCountdown(
+                    testContainer,
+                    beginAfterCountdown
+                );
 
-                    countdownCleanup =
-                        null;
-
-                    showRound();
-
-                });
         }
     );
 
@@ -2673,11 +2636,13 @@ function visualMemoryTest() {
 
         selecting = false;
 
-        if (countdownCleanup) {
-            countdownCleanup();
+        if (removeCountdown) {
+            removeCountdown();
+            removeCountdown = null;
         }
 
     };
+
 }
 
 
@@ -2688,7 +2653,6 @@ function visualMemoryTest() {
 function numberMemoryTest() {
 
     testContainer.innerHTML = `
-
         <p
             class="instruction"
             id="numberInstruction"
@@ -2757,7 +2721,7 @@ function numberMemoryTest() {
 
     let timer = null;
 
-    let countdownCleanup = null;
+    let removeCountdown = null;
 
 
     function makeNumber(length) {
@@ -2774,9 +2738,11 @@ function numberMemoryTest() {
                 Math.floor(
                     Math.random() * 10
                 );
+
         }
 
         return value;
+
     }
 
 
@@ -2788,10 +2754,13 @@ function numberMemoryTest() {
         input.style.display =
             "none";
 
-        result.innerHTML = "";
+        result.innerHTML =
+            "";
 
         currentNumber =
-            makeNumber(digits);
+            makeNumber(
+                digits
+            );
 
         display.textContent =
             currentNumber;
@@ -2804,23 +2773,27 @@ function numberMemoryTest() {
             digits * 110;
 
         timer =
-            setTimeout(() => {
+            setTimeout(
+                () => {
 
-                display.textContent =
-                    "••••";
+                    display.textContent =
+                        "••••";
 
-                input.style.display =
-                    "block";
+                    input.style.display =
+                        "block";
 
-                input.value =
-                    "";
+                    input.value =
+                        "";
 
-                input.focus();
+                    input.focus();
 
-                instruction.textContent =
-                    "Enter the number.";
+                    instruction.textContent =
+                        "Enter the number.";
 
-            }, displayTime);
+                },
+                displayTime
+            );
+
     }
 
 
@@ -2860,7 +2833,9 @@ function numberMemoryTest() {
         } else {
 
             finish();
+
         }
+
     }
 
 
@@ -2880,6 +2855,7 @@ function numberMemoryTest() {
                 finalScore;
 
             saveResults();
+
         }
 
         input.style.display =
@@ -2915,7 +2891,18 @@ function numberMemoryTest() {
                     "Reference average: about 7 digits.",
 
                 score
+
             });
+
+    }
+
+
+    function beginAfterCountdown() {
+
+        digits = 3;
+
+        beginRound();
+
     }
 
 
@@ -2923,21 +2910,19 @@ function numberMemoryTest() {
         "click",
         () => {
 
-            if (countdownCleanup) {
-                return;
+            if (removeCountdown) {
+                removeCountdown();
             }
 
-            digits = 3;
+            start.style.display =
+                "none";
 
-            countdownCleanup =
-                runCountdown(() => {
+            removeCountdown =
+                createCountdown(
+                    testContainer,
+                    beginAfterCountdown
+                );
 
-                    countdownCleanup =
-                        null;
-
-                    beginRound();
-
-                });
         }
     );
 
@@ -2952,7 +2937,9 @@ function numberMemoryTest() {
             ) {
 
                 submit();
+
             }
+
         }
     );
 
@@ -2975,11 +2962,13 @@ function numberMemoryTest() {
 
         clearTimeout(timer);
 
-        if (countdownCleanup) {
-            countdownCleanup();
+        if (removeCountdown) {
+            removeCountdown();
+            removeCountdown = null;
         }
 
     };
+
 }
 
 
@@ -2991,39 +2980,30 @@ function typingTest() {
 
     const paragraphs = [
 
-        /*
-           Easier
-        */
+        `The morning air was quiet and clear. A soft breeze moved across the open field while the first light of day appeared beyond the distant hills. Small sounds slowly filled the landscape, and the world began another ordinary morning.`,
 
-        "The morning was quiet and bright. A cool breeze moved through the trees while people slowly began their day. Small tasks felt simple, and the calm surroundings made it easy to stay focused.",
+        `Learning something new often begins with simple ideas. A person may understand a small concept today, practice it tomorrow, and eventually connect it with a much larger pattern. Patience makes difficult subjects easier to approach.`,
 
-        /*
-           Medium
-        */
+        `Technology changes quickly, but careful thinking remains valuable. Good decisions usually require observation, comparison, and a willingness to question assumptions. When information becomes complicated, clear reasoning can help separate useful evidence from distracting noise.`,
 
-        "Learning a new skill takes patience and steady practice. Progress is rarely instant, but repeated effort gradually improves accuracy, confidence, and speed. The most useful habits are often the ones that are built a little at a time.",
+        `Complex problems rarely have a single obvious solution. They may involve uncertainty, competing priorities, incomplete information, and unexpected consequences. Strong problem solving requires attention to detail while still keeping the larger objective in view.`,
 
-        /*
-           Medium-hard
-        */
+        `Scientific progress depends on curiosity, experimentation, and careful measurement. An interesting observation can lead to a hypothesis, while repeated testing can reveal whether that explanation is reliable. Even when an experiment fails, the result can provide useful information for the next attempt.`,
 
-        "Modern technology has changed the way people communicate, solve problems, and organize information. Although digital tools can make difficult tasks easier, they also require attention, judgment, and the ability to distinguish useful information from unnecessary noise.",
+        `Human performance is influenced by many interacting factors, including attention, practice, fatigue, environment, and experience. A measurement taken during one moment should therefore be interpreted as an approximation rather than a permanent description of ability. Consistent testing under similar conditions produces more useful comparisons.`,
 
-        /*
-           Harder
-        */
+        `The most difficult challenges often require several kinds of reasoning at once. A person may need to recognize patterns, evaluate evidence, remember relevant information, and adapt when new details appear. Progress usually comes not from rushing through every step, but from balancing speed with accuracy and maintaining concentration throughout the task.`
 
-        "Complex problems rarely have a single obvious solution. Careful observation, logical reasoning, and deliberate experimentation can reveal possibilities that are easy to overlook at first. Effective decision-making often depends on balancing speed with accuracy while remaining willing to reconsider an initial assumption."
     ];
 
-    const TEST_DURATION = 30;
+    const TEST_DURATION =
+        30;
 
     testContainer.innerHTML = `
-
         <p class="instruction">
             Type over the visible paragraph as fast and accurately
-            as you can. A different paragraph is selected for
-            each run, and the timer begins when you start typing.
+            as you can. New paragraphs continue automatically so
+            the test never runs out of text.
         </p>
 
         <div class="typing-stage">
@@ -3057,9 +3037,19 @@ function typingTest() {
             class="typing-stats"
             id="typingStats"
         >
-            <span>WPM: 0</span>
-            <span>Accuracy: 100%</span>
-            <span>Time: 30.0s</span>
+
+            <span>
+                WPM: 0
+            </span>
+
+            <span>
+                Accuracy: 100%
+            </span>
+
+            <span>
+                Time: 30.0s
+            </span>
+
         </div>
 
         <div id="typingResult"></div>
@@ -3090,6 +3080,7 @@ function typingTest() {
             "typingResult"
         );
 
+
     let started = false;
 
     let finished = false;
@@ -3104,16 +3095,46 @@ function typingTest() {
 
     let targetText = "";
 
+    let paragraphIndex = 0;
 
-    function chooseParagraph() {
 
-        const index =
-            Math.floor(
-                Math.random() *
+    function getNextParagraph() {
+
+        const paragraph =
+            paragraphs[
+                paragraphIndex %
                 paragraphs.length
-            );
+            ];
 
-        return paragraphs[index];
+        paragraphIndex++;
+
+        return paragraph;
+
+    }
+
+
+    function ensureTargetText(
+        minLength = 700
+    ) {
+
+        while (
+            targetText.length <
+            minLength
+        ) {
+
+            const next =
+                getNextParagraph();
+
+            targetText +=
+                (
+                    targetText
+                        ? " "
+                        : ""
+                ) +
+                next;
+
+        }
+
     }
 
 
@@ -3133,8 +3154,7 @@ function typingTest() {
             let cls = "";
 
             if (
-                i <
-                typed.length
+                i < typed.length
             ) {
 
                 cls =
@@ -3144,29 +3164,34 @@ function typingTest() {
                         : "wrong";
 
             } else if (
-                i ===
-                typed.length
+                i === typed.length
             ) {
 
                 cls =
                     "current";
+
             }
 
             const char =
-                targetText[i] === " "
+                targetText[i] ===
+                " "
                     ? "&nbsp;"
                     : targetText[i];
 
             html +=
                 `<span class="char ${cls}">${char}</span>`;
+
         }
 
         target.innerHTML =
             html;
+
     }
 
 
-    function countCorrectChars(text) {
+    function countCorrectChars(
+        text
+    ) {
 
         let correct = 0;
 
@@ -3182,10 +3207,13 @@ function typingTest() {
             ) {
 
                 correct++;
+
             }
+
         }
 
         return correct;
+
     }
 
 
@@ -3201,23 +3229,15 @@ function typingTest() {
         if (!inputStarted) {
 
             stats.innerHTML = `
-
-                <span>
-                    WPM: 0
-                </span>
-
-                <span>
-                    Accuracy: 100%
-                </span>
-
-                <span>
-                    Time: 30.0s
-                </span>
+                <span>WPM: 0</span>
+                <span>Accuracy: 100%</span>
+                <span>Time: 30.0s</span>
             `;
 
             renderTarget();
 
             return;
+
         }
 
         const now =
@@ -3248,32 +3268,30 @@ function typingTest() {
             typedChars === 0
                 ? 100
                 : Math.round(
-                    (correctChars /
-                    typedChars) *
-                    100
+                    (
+                        correctChars /
+                        typedChars
+                    ) * 100
                 );
 
         const wpm =
             correctChars === 0
                 ? 0
                 : Math.round(
-                    (correctChars / 5) /
-                    (elapsedSeconds / 60)
+                    (
+                        correctChars /
+                        5
+                    ) /
+                    (
+                        elapsedSeconds /
+                        60
+                    )
                 );
 
         stats.innerHTML = `
-
-            <span>
-                WPM: ${wpm}
-            </span>
-
-            <span>
-                Accuracy: ${accuracy}%
-            </span>
-
-            <span>
-                Time: ${(remaining / 1000).toFixed(1)}s
-            </span>
+            <span>WPM: ${wpm}</span>
+            <span>Accuracy: ${accuracy}%</span>
+            <span>Time: ${(remaining / 1000).toFixed(1)}s</span>
         `;
 
         renderTarget();
@@ -3283,7 +3301,9 @@ function typingTest() {
         ) {
 
             finish();
+
         }
+
     }
 
 
@@ -3297,7 +3317,8 @@ function typingTest() {
 
         clearInterval(timer);
 
-        input.disabled = true;
+        input.disabled =
+            true;
 
         const typedChars =
             input.value.length;
@@ -3309,9 +3330,10 @@ function typingTest() {
 
         const elapsedSeconds =
             Math.max(
-                (performance.now() -
-                startTime) /
-                1000,
+                (
+                    performance.now() -
+                    startTime
+                ) / 1000,
                 0.1
             );
 
@@ -3319,17 +3341,24 @@ function typingTest() {
             typedChars === 0
                 ? 100
                 : Math.round(
-                    (correctChars /
-                    typedChars) *
-                    100
+                    (
+                        correctChars /
+                        typedChars
+                    ) * 100
                 );
 
         const wpm =
             correctChars === 0
                 ? 0
                 : Math.round(
-                    (correctChars / 5) /
-                    (elapsedSeconds / 60)
+                    (
+                        correctChars /
+                        5
+                    ) /
+                    (
+                        elapsedSeconds /
+                        60
+                    )
                 );
 
         const finalWpm =
@@ -3346,13 +3375,17 @@ function typingTest() {
 
         if (
             finalWpm >
-            (results.typing || 0)
+            (
+                results.typing ||
+                0
+            )
         ) {
 
             results.typing =
                 finalWpm;
 
             saveResults();
+
         }
 
         result.innerHTML =
@@ -3362,10 +3395,8 @@ function typingTest() {
                     `${finalWpm} WPM`,
 
                 label:
-                    `${finalAccuracy}% accuracy`,
+                    `${finalAccuracy}% accuracy`
 
-                benchmark:
-                    "WPM is calculated from correct characters using the standard 5-characters-per-word convention."
             });
 
         start.textContent =
@@ -3375,6 +3406,7 @@ function typingTest() {
             false;
 
         updateBestLabels();
+
     }
 
 
@@ -3386,8 +3418,13 @@ function typingTest() {
 
         inputStarted = false;
 
-        targetText =
-            chooseParagraph();
+        targetText = "";
+
+        paragraphIndex = 0;
+
+        ensureTargetText(
+            900
+        );
 
         input.disabled =
             false;
@@ -3411,18 +3448,9 @@ function typingTest() {
         endTime = 0;
 
         stats.innerHTML = `
-
-            <span>
-                WPM: 0
-            </span>
-
-            <span>
-                Accuracy: 100%
-            </span>
-
-            <span>
-                Time: 30.0s
-            </span>
+            <span>WPM: 0</span>
+            <span>Accuracy: 100%</span>
+            <span>Time: 30.0s</span>
         `;
 
         renderTarget();
@@ -3432,37 +3460,8 @@ function typingTest() {
         clearInterval(timer);
 
         timer = null;
+
     }
-
-
-    /*
-       Prevent copying, pasting, cutting and dropping text
-       into the typing test.
-    */
-
-    [
-        "paste",
-        "copy",
-        "cut",
-        "drop"
-    ].forEach(eventName => {
-
-        input.addEventListener(
-            eventName,
-            event => {
-                event.preventDefault();
-            }
-        );
-
-    });
-
-
-    input.addEventListener(
-        "contextmenu",
-        event => {
-            event.preventDefault();
-        }
-    );
 
 
     input.addEventListener(
@@ -3476,9 +3475,12 @@ function typingTest() {
                 return;
             }
 
-            if (!inputStarted) {
+            if (
+                !inputStarted
+            ) {
 
-                inputStarted = true;
+                inputStarted =
+                    true;
 
                 startTime =
                     performance.now();
@@ -3493,23 +3495,59 @@ function typingTest() {
                         updateStats,
                         100
                     );
+
             }
 
-            if (
-                input.value.length >
-                targetText.length
-            ) {
-
-                input.value =
-                    input.value.slice(
-                        0,
-                        targetText.length
-                    );
-            }
+            ensureTargetText(
+                input.value.length +
+                700
+            );
 
             renderTarget();
 
             updateStats();
+
+        }
+    );
+
+
+    /*
+     * Prevent copying/pasting the passage.
+     * The visible text itself is also non-selectable.
+     */
+
+    input.addEventListener(
+        "paste",
+        event => {
+            event.preventDefault();
+        }
+    );
+
+    input.addEventListener(
+        "drop",
+        event => {
+            event.preventDefault();
+        }
+    );
+
+    input.addEventListener(
+        "contextmenu",
+        event => {
+            event.preventDefault();
+        }
+    );
+
+    target.addEventListener(
+        "copy",
+        event => {
+            event.preventDefault();
+        }
+    );
+
+    target.addEventListener(
+        "contextmenu",
+        event => {
+            event.preventDefault();
         }
     );
 
@@ -3525,6 +3563,7 @@ function typingTest() {
         clearInterval(timer);
 
     };
+
 }
 
 </script>
