@@ -1,6 +1,6 @@
 # Cognitive Arena
 
-A web-based cognitive testing suite built to benchmark reaction speed, aim accuracy, visual and number memory, and continuous typing WPM in your browser.
+A web-based cognitive testing suite built to benchmark reaction speed, aim accuracy, visual and number memory, and continuous typing wpm in your browser.
 
 ## Quick Start
 Open the live demo link above to launch the application instantly in your browser—no installation required.
